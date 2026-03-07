@@ -1,0 +1,200 @@
+import { TasksService } from './tasks.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+export declare class TasksController {
+    private readonly tasksService;
+    constructor(tasksService: TasksService);
+    create(dto: CreateTaskDto, req: any): Promise<{
+        sprint: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    }>;
+    findByProject(projectId: string, req: any): Promise<Record<string, ({
+        sprint: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    })[]>>;
+    findBySprint(sprintId: string, req: any): Promise<({
+        sprint: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    })[]>;
+    findOne(id: string, req: any): Promise<{
+        sprint: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    }>;
+    update(id: string, dto: UpdateTaskDto, req: any): Promise<{
+        sprint: {
+            name: string;
+            id: string;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    }>;
+    updateDodItem(id: string, index: string, completed: boolean, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    }>;
+    remove(id: string, req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+        customFields: import("@prisma/client/runtime/library").JsonValue | null;
+        userId: string;
+        status: import(".prisma/client").$Enums.TaskStatus;
+        priority: import(".prisma/client").$Enums.Priority;
+        title: string;
+        type: import(".prisma/client").$Enums.TaskType;
+        storyPoints: number | null;
+        estimatedHours: number | null;
+        actualHours: number | null;
+        dueDate: Date | null;
+        assignees: import("@prisma/client/runtime/library").JsonValue | null;
+        prValidators: import("@prisma/client/runtime/library").JsonValue | null;
+        testers: import("@prisma/client/runtime/library").JsonValue | null;
+        dod: import("@prisma/client/runtime/library").JsonValue | null;
+        isRecurring: boolean;
+        recurringPattern: string | null;
+        projectId: string;
+        sprintId: string | null;
+    }>;
+}

@@ -1,0 +1,729 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companies      Company[]
+  companyMembers CompanyMember[]
+  projects       Project[]
+  tasks          Task[]
+  sentInvites    Invite[]
+  resources      Resource[]
+  resourceAccess ResourceAccess[]
+  handoffsAsDesigner  DesignHandoff[] @relation("HandoffDesigner")
+  handoffsAsDeveloper DesignHandoff[] @relation("HandoffDeveloper")
+  handoffComments     HandoffComment[]
+  retrosFacilitated   Retrospective[]
+  retroParticipants   RetroParticipant[]
+  retroCards          RetroCard[]
+  retroVotes          RetroVote[]
+  retroActions        RetroAction[]
+  employerProfiles    Employer[]
+
+  @@map("users")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  customFields Json?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId   String
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects  Project[]
+  members   CompanyMember[]
+  invites   Invite[]
+  resources Resource[]
+  departments Department[]
+  positions   Position[]
+  employers   Employer[]
+
+  @@map("companies")
+}
+
+model CompanyMember {
+  id        String     @id @default(cuid())
+  role      MemberRole @default(MEMBER)
+  createdAt DateTime   @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@map("company_members")
+}
+
+model Invite {
+  id          String       @id @default(cuid())
+  email       String
+  token       String       @unique @default(cuid())
+  status      InviteStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedById String
+  invitedBy   User    @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  color       String?
+  client      String?
+  responsible String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  customFields Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+  sprints        Sprint[]
+  repositories   GitRepository[]
+  handoffs       DesignHandoff[]
+  retrospectives Retrospective[]
+
+  @@map("projects")
+}
+
+model Sprint {
+  id        String    @id @default(cuid())
+  name      String
+  goal      String?
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+  retrospectives Retrospective[]
+
+  @@map("sprints")
+}
+
+model Task {
+  id               String     @id @default(cuid())
+  title            String
+  description      String?
+  type             TaskType   @default(TASK)
+  status           TaskStatus @default(TODO)
+  priority         Priority   @default(MEDIUM)
+  storyPoints      Int?
+  estimatedHours   Float?
+  actualHours      Float?
+  dueDate          DateTime?
+  assignees        Json?      // [{ name: string, userId?: string }]
+  prValidators     Json?      // [{ name: string, userId?: string }]
+  testers          Json?      // [{ name: string, userId?: string }]
+  dod              Json?      // [{ text: string, completed: boolean }]
+  isRecurring      Boolean    @default(false)
+  recurringPattern String?
+  customFields     Json?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprintId  String?
+  sprint    Sprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+
+  pullRequests     GitPullRequest[]
+  handoffLinks     HandoffLinkedTask[]
+  retrospectives   Retrospective[]
+  retroActions     RetroAction[]
+
+  @@map("tasks")
+}
+
+model GitRepository {
+  id               String   @id @default(cuid())
+  repoFullName     String
+  defaultBranch    String   @default("main")
+  webhookSecret    String?
+  accessToken      String?
+  prOpenedStatus   String   @default("IN_REVIEW")
+  prMergedStatus   String   @default("IN_DEPLOY")
+  prClosedStatus   String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  projectId    String
+  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pullRequests GitPullRequest[]
+
+  @@unique([projectId, repoFullName])
+  @@map("git_repositories")
+}
+
+model GitPullRequest {
+  id           String    @id @default(cuid())
+  prNumber     Int
+  prTitle      String
+  prUrl        String
+  branch       String
+  baseBranch   String    @default("main")
+  state        String    @default("open")
+  author       String
+  authorAvatar String?
+  ciStatus     String?
+  mergedAt     DateTime?
+  closedAt     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  repositoryId String
+  repository   GitRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  taskId       String?
+  task         Task?         @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, prNumber])
+  @@map("git_pull_requests")
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  IN_DEPLOY
+  DONE
+  BLOCKED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+enum TaskType {
+  SPIKE
+  PRODUCT_BACKLOG
+  TASK
+  BUG
+  TECH_DEBT
+}
+
+model Resource {
+  id          String             @id @default(cuid())
+  name        String
+  url         String?
+  favicon     String?
+  type        ResourceType
+  fields      String             @db.Text  // AES-256-GCM encrypted JSON
+  notes       String?            @db.Text  // AES-256-GCM encrypted
+  visibility  ResourceVisibility @default(COMPANY)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  accessList  ResourceAccess[]
+
+  @@map("resources")
+}
+
+model ResourceAccess {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, userId])
+  @@map("resource_access")
+}
+
+enum ResourceType {
+  SITE
+  FTP
+  DATABASE
+  LOGIN
+  API_KEY
+  SSH
+  TOOL
+}
+
+enum ResourceVisibility {
+  COMPANY
+  RESTRICTED
+}
+
+// ── Design Handoff Module ──────────────────────────────────────────────────────
+
+model DesignHandoff {
+  id          String        @id @default(cuid())
+  title       String
+  description String?       @db.Text
+  status      HandoffStatus @default(DRAFT)
+  rationale   String?       @db.Text
+  userJourneyContext String? @db.Text
+  version     Int           @default(1)
+  iterationCount Int        @default(0)
+
+  // Gap coverage flags
+  gapValidationErrors   Boolean @default(false)
+  gapValidationErrorsNA Boolean @default(false)
+  gapErrorPages         Boolean @default(false)
+  gapErrorPagesNA       Boolean @default(false)
+  gapAlerts             Boolean @default(false)
+  gapAlertsNA           Boolean @default(false)
+  gapLoadingStates      Boolean @default(false)
+  gapLoadingStatesNA    Boolean @default(false)
+  gapEmptyStates        Boolean @default(false)
+  gapEmptyStatesNA      Boolean @default(false)
+  gapComponentStates    Boolean @default(false)
+  gapComponentStatesNA  Boolean @default(false)
+  gapPasswordReset      Boolean @default(false)
+  gapPasswordResetNA    Boolean @default(false)
+  gapResponsive         Boolean @default(false)
+  gapResponsiveNA       Boolean @default(false)
+
+  submittedAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  designerId  String
+  designer    User    @relation("HandoffDesigner", fields: [designerId], references: [id])
+  developerId String?
+  developer   User?   @relation("HandoffDeveloper", fields: [developerId], references: [id])
+
+  components  HandoffComponent[]
+  comments    HandoffComment[]
+  linkedTasks HandoffLinkedTask[]
+
+  @@map("design_handoffs")
+}
+
+model HandoffComponent {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  usage       String?  @db.Text
+  figmaLink   String?
+  notes       String?  @db.Text
+  variants    Json?    // [{ name, description }]
+  states      Json?    // [{ name, description }] (normal, hover, active, disabled, focus, loading)
+  styles      Json?    // [{ property, value, token }]
+  responsiveSpecs Json? // { mobile, tablet, desktop }
+  accessibilityNotes String? @db.Text
+  wcagLevel   String?  // A, AA, AAA
+  codeSnippets Json?   // [{ language, code, label }]
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  handoffId   String
+  handoff     DesignHandoff @relation(fields: [handoffId], references: [id], onDelete: Cascade)
+
+  @@map("handoff_components")
+}
+
+model HandoffComment {
+  id          String   @id @default(cuid())
+  text        String   @db.Text
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  handoffId   String
+  handoff     DesignHandoff @relation(fields: [handoffId], references: [id], onDelete: Cascade)
+  componentId String?
+  authorId    String
+  author      User    @relation(fields: [authorId], references: [id])
+  parentId    String?
+  parent      HandoffComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     HandoffComment[] @relation("CommentReplies")
+
+  @@map("handoff_comments")
+}
+
+model HandoffLinkedTask {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  handoffId String
+  handoff   DesignHandoff @relation(fields: [handoffId], references: [id], onDelete: Cascade)
+  taskId    String
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([handoffId, taskId])
+  @@map("handoff_linked_tasks")
+}
+
+enum HandoffStatus {
+  DRAFT
+  READY
+  IMPLEMENTING
+  IMPLEMENTED
+  APPROVED
+  ARCHIVED
+}
+
+
+model Retrospective {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?     @db.Text
+  status       RetroStatus @default(DRAFT)
+  isAnonymous  Boolean     @default(false)
+  voteLimit    Int         @default(5)
+  isLocked     Boolean     @default(false)
+  shareToken   String      @unique @default(cuid())
+
+  col1Name     String      @default("Went Well")
+  col1Color    String      @default("#22c55e")
+  col2Name     String      @default("Needs Improvement")
+  col2Color    String      @default("#f97316")
+  col3Name     String      @default("Action Items")
+  col3Color    String      @default("#3b82f6")
+
+  closedAt     DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  projectId    String
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  facilitatorId String
+  facilitator   User        @relation(fields: [facilitatorId], references: [id])
+  sprintId     String?
+  sprint       Sprint?     @relation(fields: [sprintId], references: [id])
+  taskId       String?
+  task         Task?        @relation(fields: [taskId], references: [id])
+
+  cards        RetroCard[]
+  actions      RetroAction[]
+  participants RetroParticipant[]
+
+  @@map("retrospectives")
+}
+
+model RetroCard {
+  id        String           @id @default(cuid())
+  content   String           @db.Text
+  category  RetroCardCategory
+  authorName String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  retroId   String
+  retro     Retrospective @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?         @relation(fields: [authorId], references: [id])
+
+  votes   RetroVote[]
+  actions RetroAction[]
+
+  @@map("retro_cards")
+}
+
+model RetroVote {
+  id      String   @id @default(cuid())
+  points  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  cardId    String
+  card      RetroCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  voterId   String?
+  voter     User?   @relation(fields: [voterId], references: [id])
+  guestId   String?
+
+  @@map("retro_votes")
+}
+
+model RetroAction {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  priority    Priority @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  retroId     String
+  retro       Retrospective @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  cardId      String
+  card        RetroCard     @relation(fields: [cardId], references: [id])
+  assigneeId  String?
+  assignee    User?         @relation(fields: [assigneeId], references: [id])
+  taskId      String?
+  task        Task?         @relation(fields: [taskId], references: [id])
+
+  @@map("retro_actions")
+}
+
+model RetroParticipant {
+  id        String   @id @default(cuid())
+  name      String
+  guestId   String?
+  joinedAt  DateTime @default(now())
+
+  retroId   String
+  retro     Retrospective @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id])
+
+  @@map("retro_participants")
+}
+
+enum RetroStatus {
+  DRAFT
+  COLECT
+  VOTE
+  ACT
+  CLOSED
+}
+
+enum RetroCardCategory {
+  WENT_WELL
+  NEEDS_IMPROVEMENT
+  ACTION_ITEMS
+}
+//  Employers Module 
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parentId    String?
+  parent      Department?  @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children    Department[] @relation("DeptHierarchy")
+  managerId   String?
+  manager     Employer?    @relation("DeptManager", fields: [managerId], references: [id])
+  employers   Employer[]   @relation("EmployerDept")
+  positions   Position[]
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("departments")
+}
+
+model Position {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  level        String?
+  companyId    String
+  company      Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  isActive     Boolean  @default(true)
+  employers    Employer[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("positions")
+}
+
+model Employer {
+  id                String         @id @default(cuid())
+  companyId         String
+  company           Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId            String?
+  user              User?          @relation(fields: [userId], references: [id])
+  // Personal
+  fullName          String
+  socialName        String?
+  emailPersonal     String?
+  emailCorporate    String
+  phonePersonal     String?
+  phoneCorporate    String?
+  birthDate         DateTime?
+  gender            String?
+  nationality       String?
+  cpf               String?
+  rg                String?
+  // Address
+  addressCep        String?
+  addressStreet     String?
+  addressNumber     String?
+  addressComplement String?
+  addressNeighborhood String?
+  addressCity       String?
+  addressState      String?
+  addressCountry    String?
+  // Emergency
+  emergencyName     String?
+  emergencyRelation String?
+  emergencyPhone    String?
+  // Professional
+  contractType      ContractType   @default(CLT)
+  admissionDate     DateTime       @default(now())
+  terminationDate   DateTime?
+  status            EmployerStatus @default(ONBOARDING)
+  workRegime        WorkRegime     @default(REMOTE)
+  weeklyHours       Int            @default(40)
+  workModality      WorkModality   @default(REMOTE)
+  // Position
+  departmentId      String?
+  department        Department?    @relation("EmployerDept", fields: [departmentId], references: [id])
+  positionId        String?
+  position          Position?      @relation(fields: [positionId], references: [id])
+  level             String?
+  managerId         String?
+  manager           Employer?      @relation("ReportingLine", fields: [managerId], references: [id])
+  reports           Employer[]     @relation("ReportingLine")
+  // Compensation
+  salary            Float?
+  salaryCurrency    String?        @default("BRL")
+  salaryPeriod      String?
+  hourlyRate        Float?
+  // Relations
+  roles             EmployerRole[]
+  skills            EmployerSkill[]
+  managedDepts      Department[]   @relation("DeptManager")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("employers")
+}
+
+model EmployerRole {
+  id         String      @id @default(cuid())
+  employerId String
+  employer   Employer    @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  companyId  String
+  role       CompanyRole
+  grantedBy  String?
+  grantedAt  DateTime    @default(now())
+  revokedAt  DateTime?
+
+  @@map("employer_roles")
+}
+
+model EmployerSkill {
+  id          String     @id @default(cuid())
+  employerId  String
+  employer    Employer   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  skillName   String
+  skillType   SkillType  @default(TECHNICAL)
+  level       SkillLevel @default(INTERMEDIATE)
+  isCertified Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  @@map("employer_skills")
+}
+
+enum ContractType {
+  CLT
+  PJ
+  FREELANCER
+  INTERN
+  APPRENTICE
+  TEMPORARY
+}
+
+enum EmployerStatus {
+  PRE_ONBOARDING
+  ONBOARDING
+  ACTIVE
+  OFFBOARDING
+  INACTIVE
+}
+
+enum WorkRegime {
+  IN_PERSON
+  REMOTE
+  HYBRID
+}
+
+enum WorkModality {
+  IN_PERSON
+  REMOTE
+  HYBRID
+}
+
+enum CompanyRole {
+  SUPER_ADMIN
+  ADMIN
+  HR_MANAGER
+  FINANCE_MANAGER
+  PROJECT_MANAGER
+  TEAM_LEAD
+  SENIOR_MEMBER
+  MEMBER
+  JUNIOR_MEMBER
+  CONTRACTOR
+  VIEWER
+}
+
+enum SkillType {
+  TECHNICAL
+  BEHAVIORAL
+  LANGUAGE
+  TOOL
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
