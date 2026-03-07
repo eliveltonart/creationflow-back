@@ -6,7 +6,7 @@ const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
-        origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173', 'https://creationflow-back-creationflow-back.ibg9zr.easypanel.host'],
+        origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4000','http://localhost:3002', 'http://localhost:5173', 'https://creationflow-back-creationflow-back.ibg9zr.easypanel.host'],
         credentials: true,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
