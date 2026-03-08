@@ -20,9 +20,12 @@ RUN npm run build
 # Remove dev dependencies
 RUN npm prune --production
 
+# Re-generate Prisma client after prune (ensures engine binaries exist)
+RUN npx prisma generate
+
 # Expose port
 EXPOSE 3001
 
-# Start the compiled application (NOT start:dev)
-CMD ["node", "dist/main"]
+# Run migrations and start the application
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
 

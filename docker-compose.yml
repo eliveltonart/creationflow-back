@@ -1,14 +1,35 @@
 version: '3.8'
 
 services:
+  api:
+    build: .
+    container_name: creationflow_back
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PORT=3001
+      - NODE_ENV=production
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    depends_on:
+      - db
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   db:
     image: postgres:15-alpine
-    container_name: creationflow_db
+    container_name: creationflow_bd
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: creationflow
+      POSTGRES_USER: admback
+      POSTGRES_PASSWORD: admback2026
+      POSTGRES_DB: creationflow_bd
     ports:
       - '5432:5432'
     volumes:

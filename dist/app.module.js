@@ -23,6 +23,7 @@ const resources_module_1 = require("./resources/resources.module");
 const handoff_module_1 = require("./handoff/handoff.module");
 const retro_module_1 = require("./retro/retro.module");
 const employers_module_1 = require("./employers/employers.module");
+const health_module_1 = require("./health/health.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,6 +34,7 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             database_module_1.DatabaseModule,
+            health_module_1.HealthModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             companies_module_1.CompaniesModule,

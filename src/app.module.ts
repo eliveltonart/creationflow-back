@@ -14,6 +14,7 @@ import { ResourcesModule } from './resources/resources.module';
 import { HandoffModule } from './handoff/handoff.module';
 import { RetroModule } from './retro/retro.module';
 import { EmployersModule } from './employers/employers.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EmployersModule } from './employers/employers.module';
       isGlobal: true,
     }),
     DatabaseModule,
+    HealthModule,
     AuthModule,
     UsersModule,
     CompaniesModule,
