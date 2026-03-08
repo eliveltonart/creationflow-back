@@ -25,6 +25,9 @@ let InvitesController = class InvitesController {
     create(createInviteDto, req) {
         return this.invitesService.create(createInviteDto, req.user.sub);
     }
+    cancel(id, req) {
+        return this.invitesService.cancel(id, req.user.sub);
+    }
     getByToken(token) {
         return this.invitesService.getByToken(token);
     }
@@ -45,6 +48,15 @@ __decorate([
     __metadata("design:paramtypes", [create_invite_dto_1.CreateInviteDto, Object]),
     __metadata("design:returntype", void 0)
 ], InvitesController.prototype, "create", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], InvitesController.prototype, "cancel", null);
 __decorate([
     (0, common_1.Get)(':token'),
     __param(0, (0, common_1.Param)('token')),

@@ -9,6 +9,9 @@ export declare class InvitesController {
         inviteLink: string;
         email: string;
     }>;
+    cancel(id: string, req: any): Promise<{
+        message: string;
+    }>;
     getByToken(token: string): Promise<{
         email: string;
         companyName: string;

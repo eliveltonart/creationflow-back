@@ -86,12 +86,13 @@ export class InvitesService {
       }
     }
 
-    // Check for existing pending invite
+    // If there's an existing pending invite, delete it and create a new one (resend)
     const existingInvite = await this.prisma.invite.findFirst({
       where: { email, companyId, status: 'PENDING' },
     });
     if (existingInvite) {
-      throw new BadRequestException('An invite for this email is already pending');
+      this.logger.log(`[INVITE] Removing old pending invite for ${email}, will resend`);
+      await this.prisma.invite.delete({ where: { id: existingInvite.id } });
     }
 
     // Create invite (expires in 7 days)
@@ -119,6 +120,32 @@ export class InvitesService {
       this.logger.error(`[INVITE] Failed to create invite: ${error.message}`, error.stack);
       throw error;
     }
+  }
+
+  async cancel(inviteId: string, userId: string) {
+    const invite = await this.prisma.invite.findUnique({
+      where: { id: inviteId },
+      include: { company: true },
+    });
+
+    if (!invite) {
+      throw new NotFoundException('Invite not found');
+    }
+
+    // Only company owner can cancel
+    if (invite.company.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException('Only pending invites can be cancelled');
+    }
+
+    await this.prisma.invite.delete({ where: { id: inviteId } });
+
+    this.logger.log(`[INVITE] Invite ${inviteId} cancelled by user ${userId}`);
+
+    return { message: 'Invite cancelled successfully' };
   }
 
   async getByToken(token: string) {

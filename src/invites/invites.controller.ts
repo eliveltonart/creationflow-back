@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { InvitesService } from './invites.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
@@ -13,6 +13,13 @@ export class InvitesController {
   @Post()
   create(@Body() createInviteDto: CreateInviteDto, @Request() req) {
     return this.invitesService.create(createInviteDto, req.user.sub);
+  }
+
+  // Cancel a pending invite (authenticated)
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  cancel(@Param('id') id: string, @Request() req) {
+    return this.invitesService.cancel(id, req.user.sub);
   }
 
   // Get invite details by token (public - for the accept page)

@@ -11,6 +11,9 @@ export declare class InvitesService {
         inviteLink: string;
         email: string;
     }>;
+    cancel(inviteId: string, userId: string): Promise<{
+        message: string;
+    }>;
     getByToken(token: string): Promise<{
         email: string;
         companyName: string;
