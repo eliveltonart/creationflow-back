@@ -26,10 +26,14 @@ export declare class InvitesService {
         companyName: string;
     }>;
     listByCompany(companyId: string, userId: string): Promise<{
+        status: import(".prisma/client").$Enums.InviteStatus;
         email: string;
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.InviteStatus;
         expiresAt: Date;
+        invitedBy: {
+            email: string;
+            name: string;
+        };
     }[]>;
 }

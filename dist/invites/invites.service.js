@@ -186,7 +186,7 @@ let InvitesService = InvitesService_1 = class InvitesService {
         });
         if (!company)
             throw new common_1.ForbiddenException('Access denied');
-        return this.prisma.invite.findMany({
+        const invites = await this.prisma.invite.findMany({
             where: { companyId },
             orderBy: { createdAt: 'desc' },
             select: {
@@ -195,8 +195,27 @@ let InvitesService = InvitesService_1 = class InvitesService {
                 status: true,
                 createdAt: true,
                 expiresAt: true,
+                invitedBy: { select: { name: true, email: true } },
             },
         });
+        const now = new Date();
+        const results = invites.map((invite) => {
+            const isExpired = invite.status === 'PENDING' && now > invite.expiresAt;
+            return {
+                ...invite,
+                status: isExpired ? 'EXPIRED' : invite.status,
+            };
+        });
+        const expiredIds = invites
+            .filter((inv) => inv.status === 'PENDING' && now > inv.expiresAt)
+            .map((inv) => inv.id);
+        if (expiredIds.length > 0) {
+            await this.prisma.invite.updateMany({
+                where: { id: { in: expiredIds } },
+                data: { status: 'EXPIRED' },
+            });
+        }
+        return results;
     }
 };
 exports.InvitesService = InvitesService;

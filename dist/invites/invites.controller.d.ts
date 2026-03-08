@@ -24,10 +24,14 @@ export declare class InvitesController {
         companyName: string;
     }>;
     listByCompany(companyId: string, req: any): Promise<{
+        status: import(".prisma/client").$Enums.InviteStatus;
         email: string;
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.InviteStatus;
         expiresAt: Date;
+        invitedBy: {
+            email: string;
+            name: string;
+        };
     }[]>;
 }

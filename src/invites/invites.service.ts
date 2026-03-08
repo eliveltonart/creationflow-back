@@ -228,7 +228,7 @@ export class InvitesService {
     });
     if (!company) throw new ForbiddenException('Access denied');
 
-    return this.prisma.invite.findMany({
+    const invites = await this.prisma.invite.findMany({
       where: { companyId },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -237,7 +237,32 @@ export class InvitesService {
         status: true,
         createdAt: true,
         expiresAt: true,
+        invitedBy: { select: { name: true, email: true } },
       },
     });
+
+    // Auto-expire invites that have passed their expiration date
+    const now = new Date();
+    const results = invites.map((invite) => {
+      const isExpired = invite.status === 'PENDING' && now > invite.expiresAt;
+      return {
+        ...invite,
+        status: isExpired ? 'EXPIRED' : invite.status,
+      };
+    });
+
+    // Batch update expired invites in the database
+    const expiredIds = invites
+      .filter((inv) => inv.status === 'PENDING' && now > inv.expiresAt)
+      .map((inv) => inv.id);
+
+    if (expiredIds.length > 0) {
+      await this.prisma.invite.updateMany({
+        where: { id: { in: expiredIds } },
+        data: { status: 'EXPIRED' },
+      });
+    }
+
+    return results;
   }
 }
