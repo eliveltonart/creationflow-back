@@ -12,6 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
 let HealthController = class HealthController {
+    root() {
+        return {
+            status: 'ok',
+            service: 'CreationFlow API',
+            timestamp: new Date().toISOString(),
+        };
+    }
     check() {
         return { status: 'ok', timestamp: new Date().toISOString() };
     }
@@ -22,8 +29,14 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
+], HealthController.prototype, "root", null);
+__decorate([
+    (0, common_1.Get)('health'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
 ], HealthController.prototype, "check", null);
 exports.HealthController = HealthController = __decorate([
-    (0, common_1.Controller)('health')
+    (0, common_1.Controller)()
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

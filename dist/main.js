@@ -19,7 +19,9 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api', {
+        exclude: ['/'],
+    });
     const port = process.env.PORT || 3001;
     await app.listen(port, '0.0.0.0');
     console.log(`🚀 Server running on http://localhost:${port}`);
