@@ -34,17 +34,12 @@ export class RetroController {
 
   @Post('share/:token/join')
   joinViaShare(@Param('token') token: string, @Body() dto: JoinRetroDto) {
-    // Guest join via share link — retroId resolved from token
-    return this.retroService.findByShareToken(token).then((retro) =>
-      this.retroService.joinRetro(retro.id, dto),
-    );
+    return this.retroService.joinRetroByToken(token, dto);
   }
 
   @Post('share/:token/cards')
   addCardViaShare(@Param('token') token: string, @Body() dto: CreateCardDto) {
-    return this.retroService.findByShareToken(token).then((retro) =>
-      this.retroService.createCard(retro.id, dto, undefined),
-    );
+    return this.retroService.createCardByToken(token, dto);
   }
 
   @Post('share/:token/cards/:cardId/votes')
@@ -53,9 +48,7 @@ export class RetroController {
     @Param('cardId') cardId: string,
     @Body() dto: VoteCardDto,
   ) {
-    return this.retroService.findByShareToken(token).then((retro) =>
-      this.retroService.voteCard(retro.id, cardId, dto, undefined),
-    );
+    return this.retroService.voteCardByToken(token, cardId, dto);
   }
 
   // ── Authenticated routes ──────────────────────────────────────────────────

@@ -122,11 +122,12 @@ export declare class RetroController {
         facilitatorId: string;
     }>;
     joinViaShare(token: string, dto: JoinRetroDto): Promise<{
+        retroId: string;
+        retroStatus: "DRAFT" | "COLECT" | "VOTE" | "ACT";
         name: string;
         id: string;
         userId: string | null;
         guestId: string | null;
-        retroId: string;
         joinedAt: Date;
     }>;
     addCardViaShare(token: string, dto: CreateCardDto): Promise<{

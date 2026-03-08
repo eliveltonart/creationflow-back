@@ -25,13 +25,13 @@ let RetroController = class RetroController {
         return this.retroService.findByShareToken(token);
     }
     joinViaShare(token, dto) {
-        return this.retroService.findByShareToken(token).then((retro) => this.retroService.joinRetro(retro.id, dto));
+        return this.retroService.joinRetroByToken(token, dto);
     }
     addCardViaShare(token, dto) {
-        return this.retroService.findByShareToken(token).then((retro) => this.retroService.createCard(retro.id, dto, undefined));
+        return this.retroService.createCardByToken(token, dto);
     }
     voteViaShare(token, cardId, dto) {
-        return this.retroService.findByShareToken(token).then((retro) => this.retroService.voteCard(retro.id, cardId, dto, undefined));
+        return this.retroService.voteCardByToken(token, cardId, dto);
     }
     getProjects(req) {
         return this.retroService.getProjects(req.user.sub);

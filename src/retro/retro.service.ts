@@ -345,6 +345,7 @@ export class RetroService {
   async joinRetro(retroId: string, dto: JoinRetroDto, userId?: string) {
     const retro = await this.prisma.retrospective.findUnique({ where: { id: retroId } });
     if (!retro) throw new NotFoundException('Retro not found');
+    if (retro.status === RetroStatus.CLOSED) throw new BadRequestException('Retro is closed');
 
     // Avoid duplicate participants
     const existing = await this.prisma.retroParticipant.findFirst({
@@ -362,6 +363,100 @@ export class RetroService {
         userId: userId || null,
         guestId: dto.guestId || null,
       },
+    });
+  }
+
+  // ── Public share endpoints ──────────────────────────────────────────────
+
+  async joinRetroByToken(token: string, dto: JoinRetroDto) {
+    const retro = await this.prisma.retrospective.findUnique({ where: { shareToken: token } });
+    if (!retro) throw new NotFoundException('Retro not found');
+    if (retro.status === RetroStatus.CLOSED) throw new BadRequestException('Retro is closed');
+
+    // Avoid duplicate by guestId
+    if (dto.guestId) {
+      const existing = await this.prisma.retroParticipant.findFirst({
+        where: { retroId: retro.id, guestId: dto.guestId },
+      });
+      if (existing) return { ...existing, retroId: retro.id, retroStatus: retro.status };
+    }
+
+    const participant = await this.prisma.retroParticipant.create({
+      data: {
+        retroId: retro.id,
+        name: dto.name,
+        guestId: dto.guestId || null,
+      },
+    });
+
+    return { ...participant, retroId: retro.id, retroStatus: retro.status };
+  }
+
+  async createCardByToken(token: string, dto: CreateCardDto) {
+    const retro = await this.prisma.retrospective.findUnique({ where: { shareToken: token } });
+    if (!retro) throw new NotFoundException('Retro not found');
+    if (retro.status !== RetroStatus.COLECT) throw new BadRequestException('Cards can only be added during Colect phase');
+
+    // Validate guestId is a participant
+    if (dto.guestId) {
+      const participant = await this.prisma.retroParticipant.findFirst({
+        where: { retroId: retro.id, guestId: dto.guestId },
+      });
+      if (!participant) throw new ForbiddenException('You must join the retro first');
+    }
+
+    return this.prisma.retroCard.create({
+      data: {
+        content: dto.content,
+        category: dto.category,
+        retroId: retro.id,
+        authorId: null,
+        authorName: dto.guestName ?? 'Anônimo',
+      },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+        votes: true,
+        actions: { select: { id: true, title: true } },
+      },
+    });
+  }
+
+  async voteCardByToken(token: string, cardId: string, dto: VoteCardDto) {
+    const retro = await this.prisma.retrospective.findUnique({ where: { shareToken: token } });
+    if (!retro) throw new NotFoundException('Retro not found');
+    if (retro.status !== RetroStatus.VOTE) throw new BadRequestException('Voting is only allowed during Vote phase');
+
+    if (!dto.guestId) throw new BadRequestException('guestId is required for anonymous voting');
+
+    // Validate guestId is a participant
+    const participant = await this.prisma.retroParticipant.findFirst({
+      where: { retroId: retro.id, guestId: dto.guestId },
+    });
+    if (!participant) throw new ForbiddenException('You must join the retro first');
+
+    // Validate card exists in this retro
+    const card = await this.prisma.retroCard.findFirst({ where: { id: cardId, retroId: retro.id } });
+    if (!card) throw new NotFoundException('Card not found');
+
+    // Check for duplicate vote on same card
+    const existingVote = await this.prisma.retroVote.findFirst({
+      where: { cardId, guestId: dto.guestId },
+    });
+    if (existingVote) throw new BadRequestException('You already voted on this card');
+
+    // Check vote limit (total votes in this retro)
+    const points = dto.points ?? 1;
+    const usedVotes = await this.prisma.retroVote.aggregate({
+      where: { card: { retroId: retro.id }, guestId: dto.guestId },
+      _sum: { points: true },
+    });
+    const usedPoints = usedVotes._sum.points ?? 0;
+    if (usedPoints + points > retro.voteLimit) {
+      throw new BadRequestException(`Vote limit exceeded. Remaining: ${retro.voteLimit - usedPoints}`);
+    }
+
+    return this.prisma.retroVote.create({
+      data: { cardId, points, voterId: null, guestId: dto.guestId },
     });
   }
 }

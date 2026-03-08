@@ -887,4 +887,49 @@ export declare class RetroService {
         retroId: string;
         joinedAt: Date;
     }>;
+    joinRetroByToken(token: string, dto: JoinRetroDto): Promise<{
+        retroId: string;
+        retroStatus: "DRAFT" | "COLECT" | "VOTE" | "ACT";
+        name: string;
+        id: string;
+        userId: string | null;
+        guestId: string | null;
+        joinedAt: Date;
+    }>;
+    createCardByToken(token: string, dto: CreateCardDto): Promise<{
+        author: {
+            email: string;
+            name: string;
+            id: string;
+        };
+        actions: {
+            id: string;
+            title: string;
+        }[];
+        votes: {
+            id: string;
+            createdAt: Date;
+            guestId: string | null;
+            points: number;
+            cardId: string;
+            voterId: string | null;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        authorId: string | null;
+        content: string;
+        category: import(".prisma/client").$Enums.RetroCardCategory;
+        retroId: string;
+        authorName: string | null;
+    }>;
+    voteCardByToken(token: string, cardId: string, dto: VoteCardDto): Promise<{
+        id: string;
+        createdAt: Date;
+        guestId: string | null;
+        points: number;
+        cardId: string;
+        voterId: string | null;
+    }>;
 }
