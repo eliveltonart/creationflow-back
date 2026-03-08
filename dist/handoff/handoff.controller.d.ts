@@ -95,7 +95,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -117,6 +116,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;
@@ -214,7 +214,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -236,6 +235,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;
@@ -341,7 +341,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -363,6 +362,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;
@@ -460,7 +460,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -482,6 +481,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;
@@ -579,7 +579,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -601,6 +600,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;
@@ -787,7 +787,6 @@ export declare class HandoffController {
         updatedAt: Date;
         description: string | null;
         status: import(".prisma/client").$Enums.HandoffStatus;
-        version: number;
         title: string;
         projectId: string;
         developerId: string | null;
@@ -809,6 +808,7 @@ export declare class HandoffController {
         gapPasswordResetNA: boolean;
         gapResponsive: boolean;
         gapResponsiveNA: boolean;
+        version: number;
         iterationCount: number;
         submittedAt: Date | null;
         completedAt: Date | null;

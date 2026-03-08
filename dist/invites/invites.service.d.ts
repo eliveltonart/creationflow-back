@@ -5,7 +5,6 @@ export declare class InvitesService {
     private prisma;
     private readonly logger;
     constructor(prisma: PrismaService);
-    private sendInviteEmail;
     create(createInviteDto: CreateInviteDto, invitedById: string): Promise<{
         message: string;
         inviteLink: string;

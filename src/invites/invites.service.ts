@@ -8,57 +8,14 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { sendInvitationEmail } from '../utils/send-email';
 import * as bcrypt from 'bcryptjs';
-import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class InvitesService {
   private readonly logger = new Logger(InvitesService.name);
 
   constructor(private prisma: PrismaService) {}
-
-  private async sendInviteEmail(
-    to: string,
-    inviteLink: string,
-    companyName: string,
-    inviterName: string,
-  ) {
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-
-    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-      this.logger.log(`[INVITE] SMTP not configured. Email would be sent to: ${to}`);
-      this.logger.log(`[INVITE] Invite link: ${inviteLink}`);
-      return;
-    }
-
-    try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT) || 587,
-        secure: false,
-        auth: { user: SMTP_USER, pass: SMTP_PASS },
-      });
-
-      await transporter.sendMail({
-        from: `"CreationFlow" <${SMTP_USER}>`,
-        to,
-        subject: `Convite para participar de ${companyName} no CreationFlow`,
-        html: `
-          <h2>Você foi convidado!</h2>
-          <p><strong>${inviterName}</strong> convidou você para fazer parte da equipe da empresa <strong>${companyName}</strong> no CreationFlow.</p>
-          <p>Clique no botão abaixo para aceitar o convite e criar sua conta:</p>
-          <a href="${inviteLink}" style="display:inline-block;padding:12px 24px;background:#2196f3;color:white;text-decoration:none;border-radius:6px;font-weight:bold;">
-            Aceitar Convite
-          </a>
-          <p style="color:#999;font-size:12px;margin-top:24px;">Este link expira em 7 dias. Se você não esperava este convite, ignore este email.</p>
-        `,
-      });
-      this.logger.log(`[INVITE] Email sent successfully to: ${to}`);
-    } catch (error) {
-      this.logger.error(`[INVITE] Failed to send email to ${to}: ${error.message}`);
-      // Don't throw - invite was already created, email failure shouldn't block it
-    }
-  }
 
   async create(createInviteDto: CreateInviteDto, invitedById: string) {
     const { email, companyId } = createInviteDto;
@@ -107,12 +64,12 @@ export class InvitesService {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
       const inviteLink = `${frontendUrl}/invite/accept?token=${invite.token}`;
 
-      await this.sendInviteEmail(email, inviteLink, company.name, company.user.name);
+      const emailSent = await sendInvitationEmail(email, inviteLink, company.name, company.user.name);
 
-      this.logger.log(`[INVITE] Invite created successfully for ${email}`);
+      this.logger.log(`[INVITE] Invite created for ${email} (email sent: ${emailSent})`);
 
       return {
-        message: 'Invite sent successfully',
+        message: emailSent ? 'Invite sent successfully' : 'Invite created (email not configured)',
         inviteLink,
         email,
       };
