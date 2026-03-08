@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
+  });
+  
+  // Global exception filter for detailed error logging
+  app.useGlobalFilters(new AllExceptionsFilter());
   
   // Enable CORS for frontend communication
   const allowedOrigins = process.env.CORS_ORIGINS

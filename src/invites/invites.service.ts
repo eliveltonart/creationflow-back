@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
@@ -12,6 +13,8 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class InvitesService {
+  private readonly logger = new Logger(InvitesService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private async sendInviteEmail(
@@ -23,36 +26,44 @@ export class InvitesService {
     const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-      console.log(`\n[INVITE] Email would be sent to: ${to}`);
-      console.log(`[INVITE] Invite link: ${inviteLink}\n`);
+      this.logger.log(`[INVITE] SMTP not configured. Email would be sent to: ${to}`);
+      this.logger.log(`[INVITE] Invite link: ${inviteLink}`);
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT) || 587,
-      secure: false,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
+    try {
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: Number(SMTP_PORT) || 587,
+        secure: false,
+        auth: { user: SMTP_USER, pass: SMTP_PASS },
+      });
 
-    await transporter.sendMail({
-      from: `"FreelancerPM" <${SMTP_USER}>`,
-      to,
-      subject: `Convite para participar de ${companyName} no FreelancerPM`,
-      html: `
-        <h2>Você foi convidado!</h2>
-        <p><strong>${inviterName}</strong> convidou você para fazer parte da equipe da empresa <strong>${companyName}</strong> no FreelancerPM.</p>
-        <p>Clique no botão abaixo para aceitar o convite e criar sua conta:</p>
-        <a href="${inviteLink}" style="display:inline-block;padding:12px 24px;background:#2196f3;color:white;text-decoration:none;border-radius:6px;font-weight:bold;">
-          Aceitar Convite
-        </a>
-        <p style="color:#999;font-size:12px;margin-top:24px;">Este link expira em 7 dias. Se você não esperava este convite, ignore este email.</p>
-      `,
-    });
+      await transporter.sendMail({
+        from: `"CreationFlow" <${SMTP_USER}>`,
+        to,
+        subject: `Convite para participar de ${companyName} no CreationFlow`,
+        html: `
+          <h2>Você foi convidado!</h2>
+          <p><strong>${inviterName}</strong> convidou você para fazer parte da equipe da empresa <strong>${companyName}</strong> no CreationFlow.</p>
+          <p>Clique no botão abaixo para aceitar o convite e criar sua conta:</p>
+          <a href="${inviteLink}" style="display:inline-block;padding:12px 24px;background:#2196f3;color:white;text-decoration:none;border-radius:6px;font-weight:bold;">
+            Aceitar Convite
+          </a>
+          <p style="color:#999;font-size:12px;margin-top:24px;">Este link expira em 7 dias. Se você não esperava este convite, ignore este email.</p>
+        `,
+      });
+      this.logger.log(`[INVITE] Email sent successfully to: ${to}`);
+    } catch (error) {
+      this.logger.error(`[INVITE] Failed to send email to ${to}: ${error.message}`);
+      // Don't throw - invite was already created, email failure shouldn't block it
+    }
   }
 
   async create(createInviteDto: CreateInviteDto, invitedById: string) {
     const { email, companyId } = createInviteDto;
+
+    this.logger.log(`[INVITE] Creating invite for ${email} to company ${companyId} by user ${invitedById}`);
 
     // Verify company exists and belongs to user
     const company = await this.prisma.company.findFirst({
@@ -87,20 +98,27 @@ export class InvitesService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const invite = await this.prisma.invite.create({
-      data: { email, companyId, invitedById, expiresAt },
-    });
+    try {
+      const invite = await this.prisma.invite.create({
+        data: { email, companyId, invitedById, expiresAt },
+      });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
-    const inviteLink = `${frontendUrl}/invite/accept?token=${invite.token}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+      const inviteLink = `${frontendUrl}/invite/accept?token=${invite.token}`;
 
-    await this.sendInviteEmail(email, inviteLink, company.name, company.user.name);
+      await this.sendInviteEmail(email, inviteLink, company.name, company.user.name);
 
-    return {
-      message: 'Invite sent successfully',
-      inviteLink,
-      email,
-    };
+      this.logger.log(`[INVITE] Invite created successfully for ${email}`);
+
+      return {
+        message: 'Invite sent successfully',
+        inviteLink,
+        email,
+      };
+    } catch (error) {
+      this.logger.error(`[INVITE] Failed to create invite: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async getByToken(token: string) {

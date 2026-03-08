@@ -3,6 +3,7 @@ import { CreateInviteDto } from './dto/create-invite.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 export declare class InvitesService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     private sendInviteEmail;
     create(createInviteDto: CreateInviteDto, invitedById: string): Promise<{
