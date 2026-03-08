@@ -44,6 +44,7 @@ export declare class CreateCardDto {
     category: RetroCardCategory;
     guestId?: string;
     guestName?: string;
+    authorName?: string;
 }
 export declare class UpdateCardDto {
     content?: string;

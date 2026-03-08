@@ -210,7 +210,7 @@ export class RetroService {
         category: dto.category,
         retroId,
         authorId: userId || null,
-        authorName: !userId ? (dto.guestName ?? 'Anônimo') : null,
+        authorName: !userId ? (dto.authorName ?? dto.guestName ?? 'Anônimo') : null,
       },
       include: { author: { select: { id: true, name: true, email: true } }, votes: true, actions: { select: { id: true, title: true } } },
     });
@@ -411,7 +411,7 @@ export class RetroService {
         category: dto.category,
         retroId: retro.id,
         authorId: null,
-        authorName: dto.guestName ?? 'Anônimo',
+        authorName: dto.authorName ?? dto.guestName ?? 'Anônimo',
       },
       include: {
         author: { select: { id: true, name: true, email: true } },

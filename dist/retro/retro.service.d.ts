@@ -54,8 +54,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -172,8 +172,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -290,8 +290,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -408,8 +408,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -526,8 +526,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -690,8 +690,8 @@ export declare class RetroService {
             authorId: string | null;
             content: string;
             category: import(".prisma/client").$Enums.RetroCardCategory;
-            retroId: string;
             authorName: string | null;
+            retroId: string;
         })[];
         actions: ({
             task: {
@@ -784,8 +784,8 @@ export declare class RetroService {
         authorId: string | null;
         content: string;
         category: import(".prisma/client").$Enums.RetroCardCategory;
-        retroId: string;
         authorName: string | null;
+        retroId: string;
     }>;
     updateCard(retroId: string, cardId: string, dto: UpdateCardDto, userId?: string): Promise<{
         author: {
@@ -812,8 +812,8 @@ export declare class RetroService {
         authorId: string | null;
         content: string;
         category: import(".prisma/client").$Enums.RetroCardCategory;
-        retroId: string;
         authorName: string | null;
+        retroId: string;
     }>;
     deleteCard(retroId: string, cardId: string, userId?: string): Promise<{
         id: string;
@@ -822,8 +822,8 @@ export declare class RetroService {
         authorId: string | null;
         content: string;
         category: import(".prisma/client").$Enums.RetroCardCategory;
-        retroId: string;
         authorName: string | null;
+        retroId: string;
     }>;
     voteCard(retroId: string, cardId: string, dto: VoteCardDto, userId?: string): Promise<{
         id: string;
@@ -921,8 +921,8 @@ export declare class RetroService {
         authorId: string | null;
         content: string;
         category: import(".prisma/client").$Enums.RetroCardCategory;
-        retroId: string;
         authorName: string | null;
+        retroId: string;
     }>;
     voteCardByToken(token: string, cardId: string, dto: VoteCardDto): Promise<{
         id: string;

@@ -133,6 +133,10 @@ export class CreateCardDto {
   @IsOptional()
   @IsString()
   guestName?: string;
+
+  @IsOptional()
+  @IsString()
+  authorName?: string;
 }
 
 export class UpdateCardDto {
