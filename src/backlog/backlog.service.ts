@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { TaskType, TaskStatus } from '@prisma/client';
 import {
   CreateBacklogItemDto,
   UpdateBacklogItemDto,
@@ -81,6 +82,99 @@ export class BacklogService {
   ) {
     await this.prisma.backlogHistory.create({
       data: { backlogItemId, action, performedById, oldValue, newValue },
+    });
+  }
+
+  // ── Backlog ↔ Task sync helpers ────────────────────────────────────────────
+
+  private mapBacklogTypeToTaskType(backlogType: string): TaskType {
+    const map: Record<string, TaskType> = {
+      FEATURE: TaskType.PRODUCT_BACKLOG,
+      BUG: TaskType.BUG,
+      TECH_DEBT: TaskType.TECH_DEBT,
+      RESEARCH: TaskType.SPIKE,
+      DESIGN: TaskType.TASK,
+      INFRA: TaskType.TASK,
+    };
+    return map[backlogType] ?? TaskType.TASK;
+  }
+
+  private mapBacklogStatusToTaskStatus(backlogStatus: string): TaskStatus {
+    const map: Record<string, TaskStatus> = {
+      BACKLOG: TaskStatus.TODO,
+      IN_SPRINT: TaskStatus.TODO,
+      DONE: TaskStatus.DONE,
+    };
+    return map[backlogStatus] ?? TaskStatus.TODO;
+  }
+
+  private mapBacklogPriorityToTaskPriority(priority: string): string {
+    return priority; // Same enum: LOW, MEDIUM, HIGH, URGENT
+  }
+
+  /**
+   * Create or update the linked Task when a BacklogItem changes.
+   */
+  private async syncTaskFromBacklogItem(
+    backlogItem: {
+      id: string;
+      title: string;
+      description?: string | null;
+      type: string;
+      status: string;
+      priority: string;
+      storyPoints?: number | null;
+      hoursEstimated?: any;
+      projectId: string;
+      sprintId?: string | null;
+      assigneeId?: string | null;
+    },
+    userId: string,
+  ) {
+    const existing = await this.prisma.task.findFirst({
+      where: { backlogItemId: backlogItem.id },
+    });
+
+    // Resolve assignee names if needed
+    let assignees: { name: string; userId?: string }[] = [];
+    if (backlogItem.assigneeId) {
+      const emp = await this.prisma.employer.findUnique({
+        where: { id: backlogItem.assigneeId },
+        select: { fullName: true, userId: true },
+      });
+      if (emp) {
+        assignees = [{ name: emp.fullName, userId: emp.userId ?? undefined }];
+      }
+    }
+
+    const taskData = {
+      title: backlogItem.title,
+      description: backlogItem.description ?? undefined,
+      type: this.mapBacklogTypeToTaskType(backlogItem.type),
+      status: this.mapBacklogStatusToTaskStatus(backlogItem.status),
+      priority: this.mapBacklogPriorityToTaskPriority(backlogItem.priority) as any,
+      storyPoints: backlogItem.storyPoints ?? undefined,
+      estimatedHours: backlogItem.hoursEstimated
+        ? parseFloat(String(backlogItem.hoursEstimated))
+        : undefined,
+      sprintId: backlogItem.sprintId ?? null,
+      assignees: assignees.length > 0 ? assignees : undefined,
+    };
+
+    if (existing) {
+      return this.prisma.task.update({
+        where: { id: existing.id },
+        data: taskData,
+      });
+    }
+
+    return this.prisma.task.create({
+      data: {
+        ...taskData,
+        projectId: backlogItem.projectId,
+        userId,
+        backlogItemId: backlogItem.id,
+      },
     });
   }
 
@@ -218,6 +312,9 @@ export class BacklogService {
       title: item.title,
     });
 
+    // Sync: create corresponding Task for kanban
+    await this.syncTaskFromBacklogItem(item, userId);
+
     return item;
   }
 
@@ -251,6 +348,10 @@ export class BacklogService {
     });
 
     await this.logHistory(id, 'UPDATE', employer.id, old as any, dto as any);
+
+    // Sync: update corresponding Task for kanban
+    await this.syncTaskFromBacklogItem(item, userId);
+
     return item;
   }
 
@@ -326,6 +427,9 @@ export class BacklogService {
       sprintName: sprint.name,
     });
 
+    // Sync: update Task sprint
+    await this.syncTaskFromBacklogItem(item, userId);
+
     return item;
   }
 
@@ -340,6 +444,10 @@ export class BacklogService {
     });
 
     await this.logHistory(id, 'RETURN_TO_BACKLOG', employer.id);
+
+    // Sync: remove Task from sprint
+    await this.syncTaskFromBacklogItem(item, userId);
+
     return item;
   }
 

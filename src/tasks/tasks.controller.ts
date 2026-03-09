@@ -24,6 +24,15 @@ export class TasksController {
     return this.tasksService.findBySprint(sprintId, req.user.sub);
   }
 
+  /** Find the Task linked to a specific backlog item */
+  @Get('backlog-item/:backlogItemId')
+  findByBacklogItem(
+    @Param('backlogItemId') backlogItemId: string,
+    @Request() req,
+  ) {
+    return this.tasksService.findByBacklogItem(backlogItemId, req.user.sub);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.tasksService.findOne(id, req.user.sub);

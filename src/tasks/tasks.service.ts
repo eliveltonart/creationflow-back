@@ -4,6 +4,26 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskStatus } from '@prisma/client';
 
+// ── Include helpers ───────────────────────────────────────────────────────────
+
+const TASK_INCLUDE = {
+  sprint: { select: { id: true, name: true } },
+  backlogItem: {
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      priority: true,
+      status: true,
+      storyPoints: true,
+      epicId: true,
+      epic: { select: { id: true, name: true, color: true } },
+      refinementStatus: true,
+      tags: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class TasksService {
   constructor(private prisma: PrismaService) {}
@@ -40,8 +60,9 @@ export class TasksService {
         prValidators: dto.prValidators ?? [],
         testers: dto.testers ?? [],
         dod: dto.dod ?? [],
+        backlogItemId: dto.backlogItemId ?? null,
       },
-      include: { sprint: { select: { id: true, name: true } } },
+      include: TASK_INCLUDE,
     });
   }
 
@@ -49,7 +70,7 @@ export class TasksService {
     await this.verifyProjectAccess(projectId, userId);
     const tasks = await this.prisma.task.findMany({
       where: { projectId },
-      include: { sprint: { select: { id: true, name: true } } },
+      include: TASK_INCLUDE,
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
     });
 
@@ -66,15 +87,25 @@ export class TasksService {
     await this.verifyProjectAccess(sprint.projectId, userId);
     return this.prisma.task.findMany({
       where: { sprintId },
-      include: { sprint: { select: { id: true, name: true } } },
+      include: TASK_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findByBacklogItem(backlogItemId: string, userId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { backlogItemId },
+      include: TASK_INCLUDE,
+    });
+    if (!task) throw new NotFoundException('Nenhuma tarefa vinculada a este item do backlog');
+    await this.verifyProjectAccess(task.projectId, userId);
+    return task;
   }
 
   async findOne(id: string, userId: string) {
     const task = await this.prisma.task.findFirst({
       where: { id },
-      include: { sprint: { select: { id: true, name: true } } },
+      include: TASK_INCLUDE,
     });
     if (!task) throw new NotFoundException('Tarefa não encontrada');
     await this.verifyProjectAccess(task.projectId, userId);
@@ -85,15 +116,38 @@ export class TasksService {
     const task = await this.prisma.task.findFirst({ where: { id } });
     if (!task) throw new NotFoundException('Tarefa não encontrada');
     await this.verifyProjectAccess(task.projectId, userId);
-    return this.prisma.task.update({
+
+    const updated = await this.prisma.task.update({
       where: { id },
       data: {
         ...dto,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         sprintId: dto.sprintId !== undefined ? (dto.sprintId || null) : undefined,
+        backlogItemId: dto.backlogItemId !== undefined ? (dto.backlogItemId || null) : undefined,
       },
-      include: { sprint: { select: { id: true, name: true } } },
+      include: TASK_INCLUDE,
     });
+
+    // Sync status back to BacklogItem when task status changes in kanban
+    if (dto.status && updated.backlogItemId) {
+      const backlogStatusMap: Record<string, string> = {
+        [TaskStatus.TODO]: 'BACKLOG',
+        [TaskStatus.IN_PROGRESS]: 'IN_SPRINT',
+        [TaskStatus.IN_REVIEW]: 'IN_SPRINT',
+        [TaskStatus.IN_DEPLOY]: 'IN_SPRINT',
+        [TaskStatus.DONE]: 'DONE',
+        [TaskStatus.BLOCKED]: 'IN_SPRINT',
+      };
+      const newBacklogStatus = backlogStatusMap[dto.status];
+      if (newBacklogStatus) {
+        await this.prisma.backlogItem.update({
+          where: { id: updated.backlogItemId },
+          data: { status: newBacklogStatus as any },
+        });
+      }
+    }
+
+    return updated;
   }
 
   async updateDodItem(id: string, index: number, completed: boolean, userId: string) {

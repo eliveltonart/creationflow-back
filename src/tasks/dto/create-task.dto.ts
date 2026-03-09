@@ -58,4 +58,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsArray()
   dod?: { text: string; completed: boolean }[];
+
+  @IsOptional()
+  @IsString()
+  backlogItemId?: string;
 }
