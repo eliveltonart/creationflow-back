@@ -15,6 +15,7 @@ import { HandoffModule } from './handoff/handoff.module';
 import { RetroModule } from './retro/retro.module';
 import { EmployersModule } from './employers/employers.module';
 import { HealthModule } from './health/health.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { HealthModule } from './health/health.module';
     HandoffModule,
     RetroModule,
     EmployersModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
