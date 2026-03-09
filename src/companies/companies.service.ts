@@ -19,12 +19,35 @@ export class CompaniesService {
       );
     }
 
-    return this.prisma.company.create({
+    const company = await this.prisma.company.create({
       data: {
         ...createCompanyDto,
         userId,
       },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        projects: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+        members: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+        _count: {
+          select: {
+            projects: true,
+            members: true,
+          },
+        },
+      },
     });
+
+    return { ...company, myRole: 'OWNER' };
   }
 
   async findAll(userId: string) {
