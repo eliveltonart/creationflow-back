@@ -16,8 +16,12 @@ RUN npx prisma generate
 # Copy source code
 COPY src ./src
 
+# Cache bust: force rebuild when git SHA changes
+ARG GIT_SHA=unknown
+RUN echo "Building commit: $GIT_SHA"
+
 # Build the application
-RUN npm run build
+RUN npm run build && echo "Build OK" && ls -la dist/
 
 # Verify build output exists
 RUN test -f dist/main.js || (echo "ERROR: dist/main.js not found after build!" && exit 1)
